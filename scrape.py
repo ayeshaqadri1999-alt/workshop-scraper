@@ -71,6 +71,30 @@ response = supabase.table("argos_electronics").insert(data).execute()
 print("✅ Data inserted into Supabase!")
 print(response)
 
+# -----------------------
+# Alerts
+# -----------------------
+avg_price = df_simulated["price"].mean()
+if avg_price < 300:
+    print(f"⚠️ ALERT: Average price dropped below £300! Current: £{avg_price:.2f}")
+
+out_of_stock = df_simulated[df_simulated["stock_status"] == "Out of stock"]
+if len(out_of_stock) > 0:
+    print(f"⚠️ {len(out_of_stock)} products are out of stock!")
+
+# Optional: price swing alert (compare to previous run CSV)
+import os
+if os.path.exists("historical_prices.csv"):
+    historical = pd.read_csv("historical_prices.csv")
+    if "price" in historical.columns:
+        prev_avg = historical["price"].mean()
+        change_pct = ((avg_price - prev_avg) / prev_avg) * 100
+        if abs(change_pct) > 10:
+            print(f"⚠️ Price swing detected: {change_pct:+.1f}% change!")
+
+# Save current scrape for future comparison
+df_simulated.to_csv("historical_prices.csv", index=False)
+
 
 latest = supabase.table("argos_electronics").select("*").order("scraped_at", desc=True).limit(5).execute()
 print("Latest 5 rows:")
